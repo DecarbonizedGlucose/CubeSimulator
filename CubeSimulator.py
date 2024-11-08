@@ -2,13 +2,14 @@ import kociemba as ko
 from tkinter import *
 
 def isSame(block):
-    pass
+    return block[0] == block[1] == block[2] == block[3] == block[4] == block[5] == block[6] == block[7] == block[8]
 
 class Cube:
     def __init__(self):
         """
         up = White, front = green, when program use scamble
         else, up = yellow, front = blue
+        the string is made up with the chars from up, right, front, down, left, back
         """
         self.UP = ["U"] * 9
         self.RIGHT = ["R"] * 9
@@ -103,11 +104,19 @@ class Cube:
         return True
     
     def getSolution(self):
+        return ko.solve(self.turnToStr())
+    
+    def turnToStr(self):
         pass
 
 root = Tk()
 root.title("Cube Simulator")
 
+cubeCan = Canvas(root, bg="pink", height=700, width=900)
+cx, cy = 100, 100
 
+
+
+cubeCan.pack()
 
 mainloop()
