@@ -1,8 +1,26 @@
 import kociemba as ko
 from tkinter import *
 
-def isSame(block):
-    return block[0] == block[1] == block[2] == block[3] == block[4] == block[5] == block[6] == block[7] == block[8]
+class ColorBlock:
+    def __init__(self, color, pol, type):
+        self.color = color
+        if type == "F":
+            self.points = [pol[0], pol[1],\
+                           pol[0] + 99, pol[1] + 12,\
+                           pol[0] + 99, pol[1] + 112,\
+                           pol[0], pol[1] + 100]
+        elif type == "U":
+            self.points = [pol[0], pol[1],\
+                           pol[0] + 99, pol[1] + 12,\
+                           pol[0] + 62, pol[1] + 49,\
+                           pol[0] - 37, pol[1] + 37]
+        elif type == "R":
+            self.points = [pol[0], pol[1],\
+                           pol[0] + 37, pol[1] - 37,\
+                           pol[0] + 37, pol[1] + 63,\
+                           pol[0], pol[1] + 100]
+        else:
+            raise TypeError
 
 class Cube:
     def __init__(self):
@@ -17,6 +35,48 @@ class Cube:
         self.DOWN = ["D"] * 9
         self.LEFT = ["L"] * 9
         self.BACK = ["B"] * 9
+
+        self.cx = 100
+        self.cy = 100
+
+        # default colors °×¶¥ÂÌÇ°
+        self.u = "white"
+        self.r = "red"
+        self.f = "#2FC96C" # green
+        self.l = "#FF8A00" # orange
+        self.d = "#F2FF18" # yellow
+        self.b = "#0873FF" # blue
+
+        self.displaycolors = []
+        self.displaypositions = [[[111, 0], [210, 12], [309, 24],\
+                                  [74, 37], [173, 49], [272, 61],\
+                                  [37, 74], [136, 86], [235, 98]],\
+                                 [[297, 147], [334, 110], [371, 73],\
+                                  [297, 247], [334, 210], [371, 173],\
+                                  [297, 347], [334, 310], [371, 273]],\
+                                 [[0, 111], [99, 123], [198, 135],\
+                                  [0, 211], [99, 223], [198, 235],\
+                                  [0, 311], [99, 323], [198, 335]]]
+        for i in self.displaypositions:
+            for j in i:
+                j[0] += self.cx
+                j[1] += self.cy
+
+        for i in range(9):
+            self.displaycolors.append(ColorBlock(self.u, self.displaypositions[0][i], "U"))
+        for i in range(9):
+            self.displaycolors.append(ColorBlock(self.r, self.displaypositions[1][i], "R"))
+        for i in range(9):
+            self.displaycolors.append(ColorBlock(self.f, self.displaypositions[2][i], "F"))
+
+    def transcolor(self, char):
+        if char == "U": return self.u
+        elif char == "D": return self.d
+        elif char == "R": return self.r
+        elif char == "L": return self.l
+        elif char == "F": return self.f
+        elif char == "B": return self.b
+        else: raise TypeError
 
     def reset(self):
         self.UP = ["U"] * 9
@@ -95,12 +155,12 @@ class Cube:
             raise ValueError("use error")
         
     def isSolved(self):
-        if not isSame(self.UP.copy()): return False
-        if not isSame(self.DOWN.copy()): return False
-        if not isSame(self.LEFT.copy()): return False
-        if not isSame(self.RIGHT.copy()): return False
-        if not isSame(self.FRONT.copy()): return False
-        if not isSame(self.BACK.copy()): return False
+        if not self.isSame(self.UP.copy()): return False
+        if not self.isSame(self.DOWN.copy()): return False
+        if not self.isSame(self.LEFT.copy()): return False
+        if not self.isSame(self.RIGHT.copy()): return False
+        if not self.isSame(self.FRONT.copy()): return False
+        if not self.isSame(self.BACK.copy()): return False
         return True
     
     def getSolution(self):
@@ -109,14 +169,30 @@ class Cube:
     def turnToStr(self):
         pass
 
-root = Tk()
-root.title("Cube Simulator")
+    def isSame(self, block):
+        return block[0] == block[1] == block[2] == block[3] == block[4] == block[5] == block[6] == block[7] == block[8]
 
-cubeCan = Canvas(root, bg="pink", height=700, width=900)
-cx, cy = 100, 100
+    def refresh(self):
+        pass
 
+class Window:
+    def __init__(self, root):
+        root.title("Cube Simulator")
+        cubeCan = Canvas(root, bg="pink", height=700, width=900)
+        self.blocks = []
+        for item in cube.displaycolors:
+            self.blocks.append(cubeCan.create_polygon(item.points, outline="black", fill=item.color, width=3))
+        #for i in self.blocks:print(i)
 
+        cubeCan.pack()
 
-cubeCan.pack()
+def main():
+    global cube
+    cube = Cube()
+    global root
+    root = Tk()
+    theWindow = Window(root)
+    root.mainloop()
 
-mainloop()
+if __name__ == "__main__":
+    main()
