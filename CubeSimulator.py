@@ -3,6 +3,9 @@ import sys
 import kociemba as ko
 from tkinter import *
 from threading import Thread
+from tkinter.messagebox import *
+import time
+import random
 
 
 class ColorBlock:
@@ -87,13 +90,34 @@ class Cube:
         for i in range(9):
             self.displayblocks.append(ColorBlock(self.COLORS["green"], self.displaypositions[2][i], "F"))
 
-    def reset(self):
+    def allreset(self): 
+        # 还原，然后坐标系黄顶蓝前
+        # 理论上应该白顶绿前，但是为了美观微调一下
         self.UP = ["U"] * 9
         self.RIGHT = ["R"] * 9
         self.FRONT = ["F"] * 9
         self.DOWN = ["D"] * 9
         self.LEFT = ["L"] * 9
         self.BACK = ["B"] * 9
+        self.turn("x", 0)
+
+    def xyzstd(self): # 整体坐标系变成白顶绿前，求解时用
+        for i in range(4):
+           if self.UP[4]!= "U":
+               self.turn("x", 1)
+        while self.UP[4] != "U":
+            self.turn("z", 1)
+        while self.FRONT[4] != "F":
+            self.turn("y", 1)
+        self.flushcolors()
+
+    def blockreset(self): # 坐标系不变，原地还原
+        self.UP = [self.UP[4]] * 9
+        self.DOWN = [self.DOWN[4]] * 9
+        self.LEFT = [self.LEFT[4]] * 9
+        self.RIGHT = [self.RIGHT[4]] * 9
+        self.FRONT = [self.FRONT[4]] * 9
+        self.BACK = [self.BACK[4]] * 9
         self.flushcolors()
 
     def faceTurn90(self, dire, clockwise):
@@ -352,7 +376,15 @@ class Cube:
         return ko.solve(self.turnToStr())
     
     def turnToStr(self):
-        pass
+        s = ""
+        for i in self.UP: s += i
+        for i in self.RIGHT: s += i
+        for i in self.FRONT: s += i
+        for i in self.DOWN: s += i
+        for i in self.LEFT: s += i
+        for i in self.BACK: s += i
+        print(s)
+        return s
 
     def isSame(self, block):
         return block[0] == block[1] == block[2] == block[3] == block[4] == block[5] == block[6] == block[7] == block[8]
@@ -365,108 +397,222 @@ class Cube:
         for i in range(9):
             self.displayblocks[i+18].color = self.COLORS[self.FRONT[i]]
 
+    def setcolor(self, string):
+        self.UP = list(string[:9])
+        self.RIGHT = list(string[9:18])
+        self.FRONT = list(string[18:27])
+        self.DOWN = list(string[27:36])
+        self.LEFT = list(string[36:45])
+        self.BACK = list(string[45:])
+        self.flushcolors()
+
+    def showAlg(self):
+        self.xyzstd()
+        alg = self.getSolution()
+        if self.isSolved():
+            showinfo(title="当前状态", message="当前已复原。")
+        else:
+            showinfo(title="当前状态", message="白顶绿前："+alg)
+
+    def changeAsAlg(self, string):
+        self.xyzstd()
+        turns = string.split(" ")
+        for turn in turns:
+            if turn[-1] == "'":
+                self.turn(turn[0], 1, 0)
+            elif turn[-1] == "2":
+                self.turn(turn[0], 0)
+            else:
+                self.turn(turn, 1)
+        self.flushcolors()
+
+    def autosolve(self):
+        self.xyzstd()
+        turns = self.getSolution().split(" ")
+        if self.isSolved():
+            showinfo(title="当前状态", message="当前已复原。")
+        else:
+            for turn in turns:
+                time.sleep(0.05)
+                if turn[-1] == "'":
+                    self.turn(turn[0], 1, 0)
+                elif turn[-1] == "2":
+                    self.turn(turn[0], 0)
+                else:
+                    self.turn(turn, 1)
+                self.flushcolors()
+
+    def scramble(self):
+        scramstr = ""
+        a = ["R", "L", "U", "D", "F", "B"]
+        r = ["L", "U", "D", "F", "B"]
+        l = ["R", "U", "D", "F", "B"]
+        u = ["R", "L", "D", "F", "B"]
+        f = ["R", "L", "U", "D", "B"]
+        b = ["R", "L", "U", "D", "F"]
+        d = ["R", "L", "U", "F", "B"]
+        buff = [" ", "' ", "2 "]
+        self.allreset()
+        cur = random.choice(a)
+        scramstr+=cur
+        scramstr+=random.choice(buff)
+        for i in range(30):
+            if cur == "R":
+                cur = random.choice(r)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+            elif cur == "L":
+                cur = random.choice(l)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+            elif cur == "U":
+                cur = random.choice(u)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+            elif cur == "D":
+                cur = random.choice(d)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+            elif cur == "F":
+                cur = random.choice(f)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+            elif cur == "B":
+                cur = random.choice(b)
+                scramstr+=cur
+                scramstr+=random.choice(buff)
+        scramstr = scramstr[:-1]
+        print(scramstr)
+        self.changeAsAlg(scramstr)
+
+def sysQuit():
+    pygame.display.quit()
+    pygame.quit()
+    sys.exit()
+
 class CubeWindow:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode(winSize)
-        pygame.display.set_caption("Cube Simulator")
+        pygame.display.set_caption("魔方模拟")
         self.clock = pygame.time.Clock()
 
         while True:
             for event in pygame.event.get():
                 if event == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                    sysQuit()
 
-            self.screen.fill(cube.COLORS["pink"])
+            self.screen.fill(cube.COLORS["black"])
             # 27 blocks
             for block in cube.displayblocks:
                 pygame.draw.polygon(self.screen, block.color, block.points, width = 0)
             for line in cube.lineps:
                 pygame.draw.aaline(self.screen, (0, 0, 0), line[0], line[1], 1)
 
-
             pygame.display.flip()
             self.clock.tick(60)
 
 class ControlWindow:
     def __init__(self, root):
-        root.title("Cube Simulator")
+        root.title("魔方模拟")
+        root.resizable(0, 0)
 
-        Button(root, text="M", width=5, command=lambda:cube.turn("M", 1)).grid(row=0, column=0)
-        Button(root, text="M'", width=5, command=lambda:cube.turn("M", 1, 0)).grid(row=0, column=1)
-        Button(root, text="M2", width=5, command=lambda:cube.turn("M", 0)).grid(row=0, column=2)
+        menubar = Menu(root)
 
-        Button(root, text="S", width=5, command=lambda:cube.turn("S", 1)).grid(row=1, column=0)
-        Button(root, text="S'", width=5, command=lambda:cube.turn("S", 1, 0)).grid(row=1, column=1)
-        Button(root, text="S2", width=5, command=lambda:cube.turn("S", 0)).grid(row=1, column=2)
+        menubar.add_command(label="复原", command=cube.allreset)
+        scramMenu = Menu(menubar, tearoff=False)
+        scramMenu.add_command(label="随机打乱", command=cube.scramble)
+        scramMenu.add_command(label="手动输入", command=None)
+        menubar.add_cascade(label="打乱", menu=scramMenu)
+        solveMenu = Menu(menubar, tearoff=False)
+        solveMenu.add_command(label="当前状态", command=cube.showAlg)
+        solveMenu.add_command(label="自动还原", command=cube.autosolve)
+        menubar.add_cascade(label="求解", menu=solveMenu)
+        menubar.add_command(label="退出程序", command=sysQuit)
 
-        Button(root, text="E", width=5, command=lambda:cube.turn("E", 1)).grid(row=2, column=0)
-        Button(root, text="E'", width=5, command=lambda:cube.turn("E", 1, 0)).grid(row=2, column=1)
-        Button(root, text="E2", width=5, command=lambda:cube.turn("E", 0)).grid(row=2, column=2)
+        root.config(menu=menubar)
 
-        Button(root, text="l", width=5, command=lambda:cube.turn("l", 1)).grid(row=0, column=3)
-        Button(root, text="l'", width=5, command=lambda:cube.turn("l", 1 ,0)).grid(row=0, column=4)
-        Button(root, text="l2", width=5, command=lambda:cube.turn("l", 0)).grid(row=0, column=5)
+        Button(root, text="M", font=("Consolas", 20), width=5, command=lambda:cube.turn("M", 1)).grid(row=0, column=0)
+        Button(root, text="M'", font=("Consolas", 20), width=5, command=lambda:cube.turn("M", 1, 0)).grid(row=0, column=1)
+        Button(root, text="M2", font=("Consolas", 20), width=5, command=lambda:cube.turn("M", 0)).grid(row=0, column=2)
 
-        Button(root, text="L", width=5, command=lambda:cube.turn("L", 1)).grid(row=1, column=3)
-        Button(root, text="L'", width=5, command=lambda:cube.turn("L", 1, 0)).grid(row=1, column=4)
-        Button(root, text="L2", width=5, command=lambda:cube.turn("L", 0)).grid(row=1, column=5)
+        Button(root, text="S", font=("Consolas", 20), width=5, command=lambda:cube.turn("S", 1)).grid(row=1, column=0)
+        Button(root, text="S'", font=("Consolas", 20), width=5, command=lambda:cube.turn("S", 1, 0)).grid(row=1, column=1)
+        Button(root, text="S2", font=("Consolas", 20), width=5, command=lambda:cube.turn("S", 0)).grid(row=1, column=2)
 
-        Button(root, text="f", width=5, command=lambda:cube.turn("f", 1)).grid(row=2, column=3)
-        Button(root, text="f'", width=5, command=lambda:cube.turn("f", 1 ,0)).grid(row=2, column=4)
-        Button(root, text="f2", width=5, command=lambda:cube.turn("f", 0)).grid(row=2, column=5)
+        Button(root, text="E", font=("Consolas", 20), width=5, command=lambda:cube.turn("E", 1)).grid(row=2, column=0)
+        Button(root, text="E'", font=("Consolas", 20), width=5, command=lambda:cube.turn("E", 1, 0)).grid(row=2, column=1)
+        Button(root, text="E2", font=("Consolas", 20), width=5, command=lambda:cube.turn("E", 0)).grid(row=2, column=2)
 
-        Button(root, text="F", width=5, command=lambda:cube.turn("F", 1)).grid(row=3, column=3)
-        Button(root, text="F'", width=5, command=lambda:cube.turn("F", 1, 0)).grid(row=3, column=4)
-        Button(root, text="F2", width=5, command=lambda:cube.turn("F", 0)).grid(row=3, column=5)
+        Button(root, text="l", font=("Consolas", 20), width=5, command=lambda:cube.turn("l", 1)).grid(row=0, column=3)
+        Button(root, text="l'", font=("Consolas", 20), width=5, command=lambda:cube.turn("l", 1 ,0)).grid(row=0, column=4)
+        Button(root, text="l2", font=("Consolas", 20), width=5, command=lambda:cube.turn("l", 0)).grid(row=0, column=5)
 
-        Button(root, text="u", width=5, command=lambda:cube.turn("u", 1)).grid(row=0, column=6)
-        Button(root, text="u'", width=5, command=lambda:cube.turn("u", 1, 0)).grid(row=0, column=7)
-        Button(root, text="u2", width=5, command=lambda:cube.turn("u", 0)).grid(row=0, column=8)
+        Button(root, text="L", font=("Consolas", 20), width=5, command=lambda:cube.turn("L", 1)).grid(row=1, column=3)
+        Button(root, text="L'", font=("Consolas", 20), width=5, command=lambda:cube.turn("L", 1, 0)).grid(row=1, column=4)
+        Button(root, text="L2", font=("Consolas", 20), width=5, command=lambda:cube.turn("L", 0)).grid(row=1, column=5)
 
-        Button(root, text="U", width=5, command=lambda:cube.turn("U", 1)).grid(row=1, column=6)
-        Button(root, text="U'", width=5, command=lambda:cube.turn("U", 1, 0)).grid(row=1, column=7)
-        Button(root, text="U2", width=5, command=lambda:cube.turn("U", 0)).grid(row=1, column=8)
+        Button(root, text="f", font=("Consolas", 20), width=5, command=lambda:cube.turn("f", 1)).grid(row=3, column=3)
+        Button(root, text="f'", font=("Consolas", 20), width=5, command=lambda:cube.turn("f", 1 ,0)).grid(row=3, column=4)
+        Button(root, text="f2", font=("Consolas", 20), width=5, command=lambda:cube.turn("f", 0)).grid(row=3, column=5)
 
-        Button(root, text="D", width=5, command=lambda:cube.turn("D", 1)).grid(row=2, column=6)
-        Button(root, text="D'", width=5, command=lambda:cube.turn("D", 1, 0)).grid(row=2, column=7)
-        Button(root, text="D2", width=5, command=lambda:cube.turn("D", 0)).grid(row=2, column=8)
+        Button(root, text="F", font=("Consolas", 20), width=5, command=lambda:cube.turn("F", 1)).grid(row=2, column=3)
+        Button(root, text="F'", font=("Consolas", 20), width=5, command=lambda:cube.turn("F", 1, 0)).grid(row=2, column=4)
+        Button(root, text="F2", font=("Consolas", 20), width=5, command=lambda:cube.turn("F", 0)).grid(row=2, column=5)
 
-        Button(root, text="d", width=5, command=lambda:cube.turn('d', 1)).grid(row=3, column=6)
-        Button(root, text="d'", width=5, command=lambda:cube.turn('d', 1, 0)).grid(row=3, column=7)
-        Button(root, text="d2", width=5, command=lambda:cube.turn('d', 0)).grid(row=3, column=8)
+        Button(root, text="u", font=("Consolas", 20), width=5, command=lambda:cube.turn("u", 1)).grid(row=0, column=6)
+        Button(root, text="u'", font=("Consolas", 20), width=5, command=lambda:cube.turn("u", 1, 0)).grid(row=0, column=7)
+        Button(root, text="u2", font=("Consolas", 20), width=5, command=lambda:cube.turn("u", 0)).grid(row=0, column=8)
 
-        Button(root, text="R", width=5, command=lambda:cube.turn("R", 1)).grid(row=1, column=9)
-        Button(root, text="R'", width=5, command=lambda:cube.turn("R", 1, 0)).grid(row=1, column=10)
-        Button(root, text="R2", width=5, command=lambda:cube.turn("R", 0)).grid(row=1, column=11)
+        Button(root, text="U", font=("Consolas", 20), width=5, command=lambda:cube.turn("U", 1)).grid(row=1, column=6)
+        Button(root, text="U'", font=("Consolas", 20), width=5, command=lambda:cube.turn("U", 1, 0)).grid(row=1, column=7)
+        Button(root, text="U2", font=("Consolas", 20), width=5, command=lambda:cube.turn("U", 0)).grid(row=1, column=8)
 
-        Button(root, text="r", width=5, command=lambda:cube.turn('r', 1)).grid(row=0, column=9)
-        Button(root, text="r'", width=5, command=lambda:cube.turn('r', 1, 0)).grid(row=0, column=10)
-        Button(root, text="r2", width=5, command=lambda:cube.turn('r', 0)).grid(row=0, column=11)
+        Button(root, text="D", font=("Consolas", 20), width=5, command=lambda:cube.turn("D", 1)).grid(row=2, column=6)
+        Button(root, text="D'", font=("Consolas", 20), width=5, command=lambda:cube.turn("D", 1, 0)).grid(row=2, column=7)
+        Button(root, text="D2", font=("Consolas", 20), width=5, command=lambda:cube.turn("D", 0)).grid(row=2, column=8)
 
-        Button(root, text="B", width=5, command=lambda:cube.turn("B", 1)).grid(row=2, column=9)
-        Button(root, text="B'", width=5, command=lambda:cube.turn("B", 1, 0)).grid(row=2, column=10)
-        Button(root, text="B2", width=5, command=lambda:cube.turn("B", 0)).grid(row=2, column=11)
+        Button(root, text="d", font=("Consolas", 20), width=5, command=lambda:cube.turn('d', 1)).grid(row=3, column=6)
+        Button(root, text="d'", font=("Consolas", 20), width=5, command=lambda:cube.turn('d', 1, 0)).grid(row=3, column=7)
+        Button(root, text="d2", font=("Consolas", 20), width=5, command=lambda:cube.turn('d', 0)).grid(row=3, column=8)
 
-        Button(root, text="b", width=5, command=lambda:cube.turn('b', 1)).grid(row=3, column=9)
-        Button(root, text="b'", width=5, command=lambda:cube.turn('b', 1, 0)).grid(row=3, column=10)
-        Button(root, text="b2", width=5, command=lambda:cube.turn('b', 0)).grid(row=3, column=11)
+        Button(root, text="R", font=("Consolas", 20), width=5, command=lambda:cube.turn("R", 1)).grid(row=1, column=9)
+        Button(root, text="R'", font=("Consolas", 20), width=5, command=lambda:cube.turn("R", 1, 0)).grid(row=1, column=10)
+        Button(root, text="R2", font=("Consolas", 20), width=5, command=lambda:cube.turn("R", 0)).grid(row=1, column=11)
 
-        Button(root, text="x", width=5, command=lambda:cube.turn('x', 1)).grid(row=0, column=12)
-        Button(root, text="x'", width=5, command=lambda:cube.turn('x', 1, 0)).grid(row=0, column=13)
-        Button(root, text="x2", width=5, command=lambda:cube.turn('x', 0)).grid(row=0, column=14)
+        Button(root, text="r", font=("Consolas", 20), width=5, command=lambda:cube.turn('r', 1)).grid(row=0, column=9)
+        Button(root, text="r'", font=("Consolas", 20), width=5, command=lambda:cube.turn('r', 1, 0)).grid(row=0, column=10)
+        Button(root, text="r2", font=("Consolas", 20), width=5, command=lambda:cube.turn('r', 0)).grid(row=0, column=11)
 
-        Button(root, text="y", width=5, command=lambda:cube.turn('y', 1)).grid(row=1, column=12)
-        Button(root, text="y'", width=5, command=lambda:cube.turn('y', 1, 0)).grid(row=1, column=13)
-        Button(root, text="y2", width=5, command=lambda:cube.turn('y', 0)).grid(row=1, column=14)
+        Button(root, text="B", font=("Consolas", 20), width=5, command=lambda:cube.turn("B", 1)).grid(row=2, column=9)
+        Button(root, text="B'", font=("Consolas", 20), width=5, command=lambda:cube.turn("B", 1, 0)).grid(row=2, column=10)
+        Button(root, text="B2", font=("Consolas", 20), width=5, command=lambda:cube.turn("B", 0)).grid(row=2, column=11)
 
-        Button(root, text="z", width=5, command=lambda:cube.turn('z', 1)).grid(row=2, column=12)
-        Button(root, text="z'", width=5, command=lambda:cube.turn('z', 1, 0)).grid(row=2, column=13)
-        Button(root, text="z2", width=5, command=lambda:cube.turn('z', 0)).grid(row=2, column=14)
+        Button(root, text="b", font=("Consolas", 20), width=5, command=lambda:cube.turn('b', 1)).grid(row=3, column=9)
+        Button(root, text="b'", font=("Consolas", 20), width=5, command=lambda:cube.turn('b', 1, 0)).grid(row=3, column=10)
+        Button(root, text="b2", font=("Consolas", 20), width=5, command=lambda:cube.turn('b', 0)).grid(row=3, column=11)
 
-        Button(root, text="Reset", width=5, command=cube.reset).grid(row=3, column=14)
-        Button(root, text="Cube", width=5, command=graphThread.start).grid(row=3, column=0)
+        Button(root, text="x", font=("Consolas", 20), width=5, command=lambda:cube.turn('x', 1)).grid(row=0, column=12)
+        Button(root, text="x'", font=("Consolas", 20), width=5, command=lambda:cube.turn('x', 1, 0)).grid(row=0, column=13)
+        Button(root, text="x2", font=("Consolas", 20), width=5, command=lambda:cube.turn('x', 0)).grid(row=0, column=14)
+
+        Button(root, text="y", font=("Consolas", 20), width=5, command=lambda:cube.turn('y', 1)).grid(row=1, column=12)
+        Button(root, text="y'", font=("Consolas", 20), width=5, command=lambda:cube.turn('y', 1, 0)).grid(row=1, column=13)
+        Button(root, text="y2", font=("Consolas", 20), width=5, command=lambda:cube.turn('y', 0)).grid(row=1, column=14)
+
+        Button(root, text="z", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 1)).grid(row=2, column=12)
+        Button(root, text="z'", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 1, 0)).grid(row=2, column=13)
+        Button(root, text="z2", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 0)).grid(row=2, column=14)
+
+        stoptimetext = StringVar()
+        stoptimetext.set("开始")
+        stopButton = Button(root, textvariable=stoptimetext, font=("Microsoft YaHei", 20), width=15, command=None)
+        stopButton.grid(row=3, column=0, columnspan=3)
+
+        showtimetext = StringVar()
+        showtimetext.set("0.000")
+        timeLabel = Label(root, textvariable=showtimetext, width=15)
+        timeLabel.grid(row=3, column=12, columnspan=3)
 
 winSize = width, height = 708, 647
 
@@ -474,6 +620,7 @@ cube = Cube()
 root = Tk()
 
 def showCubeWin():
+    cube.turn("x", 0)
     global cuWin
     cuWin = CubeWindow()
 
@@ -481,7 +628,7 @@ graphThread = Thread(target=showCubeWin)
 
 def main():
     ctWin = ControlWindow(root)
-    
+    graphThread.start()
     root.mainloop()
 
         
