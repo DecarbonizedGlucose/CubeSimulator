@@ -7,7 +7,6 @@ from tkinter.messagebox import *
 import time
 import random
 
-
 class ColorBlock:
     def __init__(self, color, pol, type):
         self.color = color
@@ -433,7 +432,7 @@ class Cube:
             showinfo(title="当前状态", message="当前已复原。")
         else:
             for turn in turns:
-                time.sleep(0.05)
+                time.sleep(0.02)
                 if turn[-1] == "'":
                     self.turn(turn[0], 1, 0)
                 elif turn[-1] == "2":
@@ -522,12 +521,13 @@ class ControlWindow:
         menubar.add_command(label="复原", command=cube.allreset)
         scramMenu = Menu(menubar, tearoff=False)
         scramMenu.add_command(label="随机打乱", command=cube.scramble)
-        scramMenu.add_command(label="手动输入", command=None)
+        scramMenu.add_command(label="手动输入", command=self.insertStr)
         menubar.add_cascade(label="打乱", menu=scramMenu)
         solveMenu = Menu(menubar, tearoff=False)
         solveMenu.add_command(label="当前状态", command=cube.showAlg)
         solveMenu.add_command(label="自动还原", command=cube.autosolve)
         menubar.add_cascade(label="求解", menu=solveMenu)
+        #menubar.add_command(label="设置", command=None)
         menubar.add_command(label="退出程序", command=sysQuit)
 
         root.config(menu=menubar)
@@ -604,20 +604,103 @@ class ControlWindow:
         Button(root, text="z'", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 1, 0)).grid(row=2, column=13)
         Button(root, text="z2", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 0)).grid(row=2, column=14)
 
-        stoptimetext = StringVar()
-        stoptimetext.set("开始")
-        stopButton = Button(root, textvariable=stoptimetext, font=("Microsoft YaHei", 20), width=15, command=None)
+        self.timer = Timer()
+
+        stopButton = Button(root, textvariable=self.timer.buttontext, font=("Microsoft YaHei", 20), width=15, command=self.timer.control)
         stopButton.grid(row=3, column=0, columnspan=3)
 
-        showtimetext = StringVar()
-        showtimetext.set("0.000")
-        timeLabel = Label(root, textvariable=showtimetext, width=15)
+        timeLabel = Label(root, textvariable=self.timer.timetext, font=("Microsoft YaHei", 20), width=15)
         timeLabel.grid(row=3, column=12, columnspan=3)
+
+    def insertStr(self):
+        self.top = Toplevel()
+        self.top.title("魔方状态")
+        self.top.resizable(0, 0)
+        Message(self.top, text="""白顶绿前，按URFDLB的顺序，不留空格，其中复原状态为:
+   UUU
+   UUU
+   UUU
+LLLFFFRRRBBB
+LLLFFFRRRBBB
+LLLFFFRRRBBB
+   DDD
+   DDD
+   DDD""", font=("MicroSoft YaHei", 15)).pack()
+        self.en = Entry(self.top, width=60)
+        self.en.pack()
+        #self.en.insert(0, StateString.get())
+        Button(self.top, text="导入", font=("MicroSoft YaHei", 15), command=self.getStr).pack()
+
+    def getStr(self):
+        #StateString.set(self.en.get())
+        try:
+            solution = ko.solve(self.en.get())
+            cube.setcolor(self.en.get())
+        except:
+            showinfo(title="错误", message="输入不合法。")
+
+class Timer:
+    def __init__(self):
+        self.buttontext = StringVar()
+        self.buttontext.set("开始")
+        self.timetext = StringVar()
+        self.timetext.set("0.000")
+        self.firstTime = 0
+        self.secondTime = 0
+        self.timerStart = Thread(target=self.start)
+        self.running = False
+        self.reseted = True
+        
+    def start(self):
+        if cube.isSolved():
+            showwarning(title="错误", message="魔方未打乱")
+            self.timerStart = Thread(target=self.start)
+            #print("Start1: running = %d" % self.running)
+            return
+        self.buttontext.set("停止")
+        self.firstTime = time.time()
+        self.running = True
+        #print("Start2: running = %d" % self.running)
+        while self.running:
+            #print("Start Running: running = %d" % self.running) ##########
+            self.secondTime = time.time()
+            self.timetext.set("%.3f" % (self.secondTime-self.firstTime))
+            time.sleep(0.01)
+            if cube.isSolved():
+                self.stop()
+            # if self.running == False : break
+
+    def stop(self):
+        #print("Stop: running = %d" % self.running) ###########
+        self.running = False
+        self.reseted = False
+        self.buttontext.set("清零")
+        if cube.isSolved():
+            self.timetext.set("%.3f" % (self.secondTime-self.firstTime))
+        else:
+            self.timetext.set("Did Not Finish")
+
+    def reset(self):
+        self.buttontext.set("开始")
+        self.timetext.set("0.000")
+        self.reseted = True
+        self.timerStart = Thread(target=self.start)
+
+    def control(self):
+        if self.running:
+            self.stop()
+        else:
+            if self.reseted:
+                self.timerStart.start()
+            else:
+                self.reset()
 
 winSize = width, height = 708, 647
 
 cube = Cube()
 root = Tk()
+#StateString = StringVar()
+#StateString.set("")
 
 def showCubeWin():
     cube.turn("x", 0)
@@ -627,10 +710,10 @@ def showCubeWin():
 graphThread = Thread(target=showCubeWin)
 
 def main():
+    global ctWin
     ctWin = ControlWindow(root)
     graphThread.start()
     root.mainloop()
 
-        
 if __name__ == "__main__":
     main()
