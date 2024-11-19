@@ -1,6 +1,6 @@
 import pygame
 import sys
-import kociemba as ko
+from kociemba import *
 from tkinter import *
 from threading import Thread
 from tkinter.messagebox import *
@@ -372,7 +372,7 @@ class Cube:
         return True
     
     def getSolution(self):
-        return ko.solve(self.turnToStr())
+        return solve(self.turnToStr())
     
     def turnToStr(self):
         s = ""
@@ -634,7 +634,7 @@ LLLFFFRRRBBB
     def getStr(self):
         #StateString.set(self.en.get())
         try:
-            solution = ko.solve(self.en.get())
+            solution = solve(self.en.get())
             cube.setcolor(self.en.get())
         except:
             showinfo(title="错误", message="输入不合法。")
