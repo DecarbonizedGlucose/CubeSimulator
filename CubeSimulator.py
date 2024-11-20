@@ -504,7 +504,6 @@ class CubeWindow:
         while self.running:
             for event in pygame.event.get():
                 if event == pygame.QUIT:
-                    print("Tried to quit")
                     sysQuit()
 
             self.screen.fill(cube.COLORS["black"])
@@ -534,7 +533,6 @@ class ControlWindow:
         solveMenu.add_command(label="当前状态", command=cube.showAlg)
         solveMenu.add_command(label="自动还原", command=cube.autosolve)
         menubar.add_cascade(label="求解", menu=solveMenu)
-        #menubar.add_command(label="设置", command=None)
         menubar.add_command(label="退出程序", command=sysQuit)
 
         root.config(menu=menubar)
@@ -635,11 +633,9 @@ LLLFFFRRRBBB
    DDD""", font=("MicroSoft YaHei", 15)).pack()
         self.en = Entry(self.top, width=60)
         self.en.pack()
-        #self.en.insert(0, StateString.get())
         Button(self.top, text="导入", font=("MicroSoft YaHei", 15), command=self.getStr).pack()
 
     def getStr(self):
-        #StateString.set(self.en.get())
         try:
             solution = solve(self.en.get())
             cube.setcolor(self.en.get())
@@ -707,12 +703,9 @@ winSize = width, height = 708, 647
 cube = Cube()
 root = Tk()
 cuWin = CubeWindow()
-#StateString = StringVar()
-#StateString.set("")
 
 def showCubeWin():
     cube.turn("x", 0)
-    #cuWin = CubeWindow()
     cuWin.run()
 
 graphThread = Thread(target=showCubeWin)
