@@ -6,6 +6,7 @@ from threading import Thread
 from tkinter.messagebox import *
 import time
 import random
+import os
 
 class ColorBlock:
     def __init__(self, color, pol, type):
@@ -485,9 +486,11 @@ class Cube:
         self.changeAsAlg(scramstr)
 
 def sysQuit():
-    pygame.display.quit()
+    cuWin.running = False
+    root.destroy()
     pygame.quit()
     sys.exit()
+    os._exit()
 
 class CubeWindow:
     def __init__(self):
@@ -495,10 +498,13 @@ class CubeWindow:
         self.screen = pygame.display.set_mode(winSize)
         pygame.display.set_caption("魔方模拟")
         self.clock = pygame.time.Clock()
+        self.running = True
 
-        while True:
+    def run(self):
+        while self.running:
             for event in pygame.event.get():
                 if event == pygame.QUIT:
+                    print("Tried to quit")
                     sysQuit()
 
             self.screen.fill(cube.COLORS["black"])
@@ -515,6 +521,7 @@ class ControlWindow:
     def __init__(self, root):
         root.title("魔方模拟")
         root.resizable(0, 0)
+        root.protocol("WM_DELETE_WINDOW", sysQuit)
 
         menubar = Menu(root)
 
@@ -699,13 +706,14 @@ winSize = width, height = 708, 647
 
 cube = Cube()
 root = Tk()
+cuWin = CubeWindow()
 #StateString = StringVar()
 #StateString.set("")
 
 def showCubeWin():
     cube.turn("x", 0)
-    global cuWin
-    cuWin = CubeWindow()
+    #cuWin = CubeWindow()
+    cuWin.run()
 
 graphThread = Thread(target=showCubeWin)
 
