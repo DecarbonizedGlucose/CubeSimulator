@@ -372,7 +372,7 @@ class Cube:
         if not self.isSame(self.BACK.copy()): return False
         return True
     
-    def getSolution(self):
+    def getSolution(self): # 没环境，纯py了，慢
         return solve(self.turnToStr())
     
     def turnToStr(self):
@@ -425,6 +425,7 @@ class Cube:
             else:
                 self.turn(turn, 1)
         self.flushcolors()
+        showinfo(title="本次打乱", message="白顶绿前："+string)
 
     def autosolve(self):
         self.xyzstd()
@@ -433,7 +434,7 @@ class Cube:
             showinfo(title="当前状态", message="当前已复原。")
         else:
             for turn in turns:
-                time.sleep(0.02)
+                time.sleep(0.03) # 本来可以一瞬间还原的，，，但是有点敷衍，像是直接reset了，于是每次旋转停顿一下
                 if turn[-1] == "'":
                     self.turn(turn[0], 1, 0)
                 elif turn[-1] == "2":
@@ -490,7 +491,7 @@ def sysQuit():
     root.destroy()
     pygame.quit()
     sys.exit()
-    os._exit()
+    os._exit() # 强制退出
 
 class CubeWindow:
     def __init__(self):
@@ -503,7 +504,7 @@ class CubeWindow:
     def run(self):
         while self.running:
             for event in pygame.event.get():
-                if event == pygame.QUIT:
+                if event == pygame.QUIT: # 幽默pygame经典bug之捕获不到
                     sysQuit()
 
             self.screen.fill(cube.COLORS["black"])
@@ -607,7 +608,7 @@ class ControlWindow:
 
         Button(root, text="z", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 1)).grid(row=2, column=12)
         Button(root, text="z'", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 1, 0)).grid(row=2, column=13)
-        Button(root, text="z2", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 0)).grid(row=2, column=14)
+        Button(root, text="z2", font=("Consolas", 20), width=5, command=lambda:cube.turn('z', 0)).grid(row=2, column=14) # 没字体咋办？
 
         self.timer = Timer()
 
@@ -630,7 +631,7 @@ LLLFFFRRRBBB
 LLLFFFRRRBBB
    DDD
    DDD
-   DDD""", font=("MicroSoft YaHei", 15)).pack()
+   DDD""", font=("Consolas", 15)).pack()
         self.en = Entry(self.top, width=60)
         self.en.pack()
         Button(self.top, text="导入", font=("MicroSoft YaHei", 15), command=self.getStr).pack()
