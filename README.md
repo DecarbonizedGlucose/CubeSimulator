@@ -23,5 +23,3 @@
 - Python版本>=3.8
 - 安装字体Microsoft YaHei
 - 安装字体Consolas（缺失可能导致界面不美观）
-
-# git test
