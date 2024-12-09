@@ -8,6 +8,8 @@ import time
 import random
 import os
 
+os.environ["SDL_IME_SHOW_UI"] = "1"
+
 class ColorBlock:
     def __init__(self, color, pol, type):
         self.color = color
@@ -58,20 +60,20 @@ class Cube:
                   "B":(8, 115, 255), "F":(47, 201, 108)}
 
         self.displayblocks = []
-        self.displaypositions = [[[111, 0], [210, 12], [309, 24],\
-                                  [74, 37], [173, 49], [272, 61],\
-                                  [37, 74], [136, 86], [235, 98]],\
-                                 [[297, 147], [334, 110], [371, 73],\
-                                  [297, 247], [334, 210], [371, 173],\
-                                  [297, 347], [334, 310], [371, 273]],\
-                                 [[0, 111], [99, 123], [198, 135],\
-                                  [0, 211], [99, 223], [198, 235],\
+        self.displaypositions = [[[111, 0], [210, 12], [309, 24],
+                                  [74, 37], [173, 49], [272, 61],
+                                  [37, 74], [136, 86], [235, 98]],
+                                 [[297, 147], [334, 110], [371, 73],
+                                  [297, 247], [334, 210], [371, 173],
+                                  [297, 347], [334, 310], [371, 273]],
+                                 [[0, 111], [99, 123], [198, 135],
+                                  [0, 211], [99, 223], [198, 235],
                                   [0, 311], [99, 323], [198, 335]]]
-        self.lineps = [[[111, 0], [0, 111]], [[210, 12], [99, 123]], [[309, 24], [198, 135]], [[408, 36], [297, 147]],\
-                       [[111, 0], [408, 36]], [[74, 37], [371, 73]], [[37, 74], [334, 110]], [[0, 111], [297, 147]],\
-                       [[0, 211], [297, 247]], [[0, 311], [297, 347]], [[0, 411], [297, 447]],\
-                       [[0, 111], [0, 411]], [[99, 123], [99, 423]], [[198, 135], [198, 435]], [[297, 147], [297, 447]],\
-                       [[297, 247], [408, 136]], [[297, 347], [408, 236]], [[297, 447], [408, 336]],\
+        self.lineps = [[[111, 0], [0, 111]], [[210, 12], [99, 123]], [[309, 24], [198, 135]], [[408, 36], [297, 147]],
+                       [[111, 0], [408, 36]], [[74, 37], [371, 73]], [[37, 74], [334, 110]], [[0, 111], [297, 147]],
+                       [[0, 211], [297, 247]], [[0, 311], [297, 347]], [[0, 411], [297, 447]],
+                       [[0, 111], [0, 411]], [[99, 123], [99, 423]], [[198, 135], [198, 435]], [[297, 147], [297, 447]],
+                       [[297, 247], [408, 136]], [[297, 347], [408, 236]], [[297, 447], [408, 336]],
                        [[334, 110], [334, 410]], [[371, 73], [371, 373]], [[408, 36], [408, 336]]]
         for i in self.displaypositions:
             for j in i:
@@ -489,11 +491,13 @@ class Cube:
 def sysQuit():
     cuWin.running = False
     root.destroy()
+    pygame.display.quit()
     pygame.quit()
-    sys.exit()
-    os._exit() # 强制退出
+    sys.exit(0)
 
-class CubeWindow:
+# systemQuitThread = Thread(target=sysQuit)
+
+class CubeWindow: # Pygame窗口
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode(winSize)
@@ -501,11 +505,79 @@ class CubeWindow:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        """
+        以下是pygame键盘绑定 实体键盘操作
+        键 -> 操作
+        Q -> z'    W -> x     E -> z
+        A -> y     S -> x'    D -> y'
+        6 -> S     7 -> E'    8 -> M'
+        T -> B'    Y -> U'    U -> U     I -> B
+        F -> L'    G -> L     J -> R'    K -> R
+        V -> D     B -> F'    N -> F     M -> D'
+        Space -> 单双层/中层方向 切换
+        """
+        self.middleShift = True
+        self.singleLayer = True
+
     def run(self):
         while self.running:
+            pygame.event.pump()
             for event in pygame.event.get():
-                if event == pygame.QUIT: # 幽默pygame经典bug之捕获不到
-                    sysQuit()
+                print(event)
+                # if event.type == pygame.QUIT:
+                #     self.running = False
+                #     systemQuitThread.start()
+                if event.type == pygame.KEYDOWN: # 实体键盘操作
+                    if event.key == pygame.K_SPACE:
+                        self.middleShift = False
+                        self.singleLayer = False
+                    elif event.key == pygame.K_6:
+                        cube.turn("S", True, True if self.middleShift else False)
+                        print("get it")
+                    elif event.key == pygame.K_7:
+                        cube.turn("E", True, False if self.middleShift else True)
+                    elif event.key == pygame.K_8:
+                        cube.turn("M", True, False if self.middleShift else True)
+                    elif event.key == pygame.K_q:
+                        cube.turn("z", 1, 0)
+                    elif event.key == pygame.K_w:
+                        cube.turn("x", 1, 1)
+                    elif event.key == pygame.K_e:
+                        cube.turn("z", 1, 1)
+                    elif event.key == pygame.K_a:
+                        cube.turn("y", 1, 1)
+                    elif event.key == pygame.K_s:
+                        cube.turn("x", 1, 0)
+                    elif event.key == pygame.K_d:
+                        cube.turn("y", 1, 0)
+                    elif event.key == pygame.K_t:
+                        cube.turn("B" if self.singleLayer else "b", 1, 0)
+                    elif event.key == pygame.K_y:
+                        cube.turn("U" if self.singleLayer else "u", 1, 0)
+                    elif event.key == pygame.K_u:
+                        cube.turn("U" if self.singleLayer else "u", 1, 1)
+                    elif event.key == pygame.K_i:
+                        cube.turn("B" if self.singleLayer else "b", 1, 1)
+                    elif event.key == pygame.K_f:
+                        cube.turn("L" if self.singleLayer else 'l', 1, 0)
+                    elif event.key == pygame.K_g:
+                        cube.turn("L" if self.singleLayer else 'l', 1, 1)
+                    elif event.key == pygame.K_j:
+                        cube.turn("R" if self.singleLayer else 'r', 1, 0)
+                    elif event.key == pygame.K_k:
+                        cube.turn("R" if self.singleLayer else 'r', 1, 1)
+                    elif event.key == pygame.K_v:
+                        cube.turn("D" if self.singleLayer else 'd', 1, 1)
+                    elif event.key == pygame.K_b:
+                        cube.turn("F" if self.singleLayer else 'f', 1, 0)
+                    elif event.key == pygame.K_n:
+                        cube.turn("F" if self.singleLayer else 'f', 1, 1)
+                    elif event.key == pygame.K_m:
+                        cube.turn("D" if self.singleLayer else 'd', 1, 0)
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        self.middleShift = True
+                        self.singleLayer = True
 
             self.screen.fill(cube.COLORS["black"])
             # 27 blocks
@@ -517,7 +589,7 @@ class CubeWindow:
             pygame.display.flip()
             self.clock.tick(60)
 
-class ControlWindow:
+class ControlWindow: # Tkinter窗口
     def __init__(self, root):
         root.title("魔方模拟")
         root.resizable(0, 0)
