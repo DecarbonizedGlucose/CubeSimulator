@@ -31,7 +31,7 @@
 # 键位
 ```
 Q -> z'    W -> x     E -> z
-A -> y     S -> x'    D -> y'
+A -> y'    S -> x'    D -> y
 6 -> S     7 -> E'    8 -> M'
 T -> B'    Y -> U'    U -> U     I -> B
 F -> L'    G -> L     J -> R'    K -> R

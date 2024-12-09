@@ -545,11 +545,11 @@ class CubeWindow: # Pygame窗口
                     elif event.key == pygame.K_e:
                         cube.turn("z", 1, 1)
                     elif event.key == pygame.K_a:
-                        cube.turn("y", 1, 1)
+                        cube.turn("y", 1, 0)
                     elif event.key == pygame.K_s:
                         cube.turn("x", 1, 0)
                     elif event.key == pygame.K_d:
-                        cube.turn("y", 1, 0)
+                        cube.turn("y", 1, 1)
                     elif event.key == pygame.K_t:
                         cube.turn("B" if self.singleLayer else "b", 1, 0)
                     elif event.key == pygame.K_y:
