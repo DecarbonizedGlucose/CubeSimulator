@@ -22,9 +22,12 @@
 - 由于Pygame自身存在bug，单击魔方窗口退出键会导致程序卡死，可以单击控制窗口退出键，并另提供程序出口。
 
 # 运行环境依赖
-- Microsoft Windows 7, 8, 10, 11
+- Python ver>=3.8
 - 预安装第三方Python库kociemba，pygame/pygame-ce
-- Python版本>=3.8
+~~~sh
+pip install kociemba
+pip install pygame-ce
+~~~
 - 安装字体Microsoft YaHei
 - 安装字体Consolas（缺失可能导致界面不美观）
 
