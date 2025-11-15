@@ -53,7 +53,7 @@ class Cube:
         self.cx = 150
         self.cy = 100
 
-        
+
         self.COLORS = {"white":(255, 255, 255), "black":(0, 0, 0), "pink":(255, 174, 201), "yellow":(242, 255, 24),\
                   "blue":(8, 115, 255), "orange":(255, 138, 0), "red":(255, 0, 0), "green":(47, 201, 108),\
                   "U":(255, 255, 255), "D":(242, 255, 24), "L":(255, 138, 0), "R":(255, 0, 0),\
@@ -92,7 +92,7 @@ class Cube:
         for i in range(9):
             self.displayblocks.append(ColorBlock(self.COLORS["green"], self.displaypositions[2][i], "F"))
 
-    def allreset(self): 
+    def allreset(self):
         # 还原，然后坐标系黄顶蓝前
         # 理论上应该白顶绿前，但是为了美观微调一下
         self.UP = ["U"] * 9
@@ -197,9 +197,9 @@ class Cube:
                 self.UP[2], self.RIGHT[8], self.DOWN[6], self.LEFT[0] = self.LEFT[0], self.UP[2], self.RIGHT[8], self.DOWN[6]
         else:
             raise TypeError("use error")
-    
+
     def faceTurn180(self, dire):
-        
+
         if dire == "U":
             self.UP[:4], self.UP[8:4:-1] = self.UP[8:4:-1], self.UP[:4]
             self.FRONT[:3], self.BACK[:3] = self.BACK[:3], self.FRONT[:3]
@@ -364,7 +364,7 @@ class Cube:
             raise TypeError
 
         self.flushcolors()
-        
+
     def isSolved(self):
         if not self.isSame(self.UP.copy()): return False
         if not self.isSame(self.DOWN.copy()): return False
@@ -373,10 +373,10 @@ class Cube:
         if not self.isSame(self.FRONT.copy()): return False
         if not self.isSame(self.BACK.copy()): return False
         return True
-    
+
     def getSolution(self): # 没环境，纯py了，慢
         return solve(self.turnToStr())
-    
+
     def turnToStr(self):
         s = ""
         for i in self.UP: s += i
@@ -500,7 +500,8 @@ def sysQuit():
 class CubeWindow: # Pygame窗口
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode(winSize)
+        # 使用普通窗口，避免在某些 Linux/Wayland 环境下的 OpenGL 上下文问题
+        self.screen = pygame.display.set_mode(winSize, 0)
         pygame.display.set_caption("魔方模拟")
         self.clock = pygame.time.Clock()
         self.running = True
@@ -584,9 +585,14 @@ class CubeWindow: # Pygame窗口
             for block in cube.displayblocks:
                 pygame.draw.polygon(self.screen, block.color, block.points, width = 0)
             for line in cube.lineps:
-                pygame.draw.aaline(self.screen, (0, 0, 0), line[0], line[1], 1)
+                pygame.draw.aaline(self.screen, (0, 0, 0), line[0], line[1])
 
-            pygame.display.flip()
+            try:
+                pygame.display.flip()
+            except pygame.error:
+                # 如果窗口已经被系统关闭，退出循环
+                self.running = False
+                break
             self.clock.tick(60)
 
 class ControlWindow: # Tkinter窗口
@@ -726,7 +732,7 @@ class Timer:
         self.timerStart = Thread(target=self.start)
         self.running = False
         self.reseted = True
-        
+
     def start(self):
         if cube.isSolved():
             showwarning(title="错误", message="魔方未打乱")
@@ -774,20 +780,37 @@ class Timer:
 winSize = width, height = 708, 647
 
 cube = Cube()
-root = Tk()
 cuWin = CubeWindow()
 
-def showCubeWin():
-    cube.turn("x", 0)
-    cuWin.run()
+root = None
 
-graphThread = Thread(target=showCubeWin)
+def sysQuit():
+    """统一、安全地退出 Tk 和 pygame。"""
+    global root
+    cuWin.running = False
+    if root is not None:
+        try:
+            root.quit()
+            root.destroy()
+        except Exception:
+            pass
+    pygame.display.quit()
+    pygame.quit()
+    sys.exit(0)
 
-def main():
+def run_control_window():
+    global root
+    root = Tk()
+    root.title("魔方模拟")
     global ctWin
     ctWin = ControlWindow(root)
-    graphThread.start()
     root.mainloop()
+
+def main():
+    control_thread = Thread(target=run_control_window, daemon=True)
+    control_thread.start()
+    cube.turn("x", 0)
+    cuWin.run()
 
 if __name__ == "__main__":
     main()
