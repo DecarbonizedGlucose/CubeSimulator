@@ -495,8 +495,6 @@ def sysQuit():
     pygame.quit()
     sys.exit(0)
 
-# systemQuitThread = Thread(target=sysQuit)
-
 class CubeWindow: # Pygame窗口
     def __init__(self):
         pygame.init()
@@ -525,9 +523,6 @@ class CubeWindow: # Pygame窗口
             pygame.event.pump()
             for event in pygame.event.get():
                 print(event)
-                # if event.type == pygame.QUIT:
-                #     self.running = False
-                #     systemQuitThread.start()
                 if event.type == pygame.KEYDOWN: # 实体键盘操作
                     if event.key == pygame.K_SPACE:
                         self.middleShift = False
@@ -737,23 +732,18 @@ class Timer:
         if cube.isSolved():
             showwarning(title="错误", message="魔方未打乱")
             self.timerStart = Thread(target=self.start)
-            #print("Start1: running = %d" % self.running)
             return
         self.buttontext.set("停止")
         self.firstTime = time.time()
         self.running = True
-        #print("Start2: running = %d" % self.running)
         while self.running:
-            #print("Start Running: running = %d" % self.running) ##########
             self.secondTime = time.time()
             self.timetext.set("%.3f" % (self.secondTime-self.firstTime))
             time.sleep(0.01)
             if cube.isSolved():
                 self.stop()
-            # if self.running == False : break
 
     def stop(self):
-        #print("Stop: running = %d" % self.running) ###########
         self.running = False
         self.reseted = False
         self.buttontext.set("清零")
